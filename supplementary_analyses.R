@@ -84,9 +84,8 @@ test(emtrends(time_mod, pairwise ~ treatment, var = "days_since_mating_opp")) # 
 time_dat$days_since_mating_opp <- as.factor(time_dat$days_since_mating_opp)
 
 ggplot(data = time_dat, aes(x = days_since_mating_opp, y = daily_offspring, fill = treatment)) + geom_boxplot() + 
-       scale_fill_manual(values=c("#caf0f8", "#01497c")) + 
-       My_Theme + ylab("Daily offspring produced per female") + xlab("Days since last mating opportunity") +
-       facet_grid(~ replicate)
+       scale_fill_manual(values=c("#caf0f8", "#01497c")) + ylim(0, 100) +
+       My_Theme + ylab("Daily offspring produced per female") + xlab("Days since last mating opportunity") 
 
 ########################## COURTSHIP REPLICATE 1 ############################
 courtship_1_data <- read.csv("data/r1_courtship.csv") %>% 
