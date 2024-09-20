@@ -21,8 +21,8 @@ glue_data <- read.csv("data/glued_pilot.csv", stringsAsFactors = TRUE)
 
 ggplot(data = glue_data, aes(x = treatment, y = prop_courtship, fill = treatment)) + 
        geom_boxplot() + geom_jitter(width = 0.18, height = 0, alpha = 0.5, size = 2) + 
-       My_Theme + theme(legend.position = "none") + 
-       ylab("Proportion of trial spent courting") + xlab("Male status") +
+       My_Theme + theme(legend.position = "none") + ylim(0, 1) +
+       ylab("Proportion of trial spent courting") + xlab("Male type") +
        scale_fill_manual(values=c("grey80", "grey80")) 
 
 glue_mod <- glmmTMB(data = glue_data, asin(sqrt(prop_courtship)) ~ treatment + 
@@ -49,7 +49,7 @@ offspring_batches$female_age <- factor(offspring_batches$female_age,
 
 ggplot(data = offspring_batches, aes(x = female_age, y = daily_offspring, fill = treatment)) + geom_boxplot() + 
        scale_fill_manual(values=c("#caf0f8", "#468faf", "#01497c")) + 
-      My_Theme + ylab("Daily offspring produced per female") + xlab("Female age (days)")
+       My_Theme + ylab("Daily offspring produced per female") + xlab("Female age (days)")
 
 offspring_batches_block1 <- offspring_batches %>% 
                             filter(female_age == "4-5" | female_age == "6-7" | female_age == "8-9" | 
@@ -61,6 +61,32 @@ ggplot(data = offspring_batches_block1, aes(x = female_age, y = daily_offspring,
        scale_fill_manual(values=c("#caf0f8", "#468faf", "#01497c")) + 
        My_Theme + ylab("Daily offspring produced per female") + xlab("Female age (days)")
 
+## Offspring produced as a function of Low females' last mating opportunity analyses
+time_dat <- read.csv("data/offspring_by_batch.csv", stringsAsFactors = TRUE) %>% 
+            unite("rep_ID", c(replicate, treatment, vial), sep = "_", remove = FALSE) %>% # create ID column
+            filter(rep_ID != "1_low_3" & rep_ID != "1_low_11") %>% # remove rep 1 flies with issues
+            filter(rep_ID != "2_low_4" & rep_ID != "2_medium_16") %>%  # remove rep 2 flies with issues
+            mutate(daily_offspring = total_offspring/days) %>%  # create offspring production rate column
+            filter(treatment != "medium") %>% # Remove medium, keeping high as the ref level
+            filter(days_since_mating_opp != "NA")
+
+time_dat$treatment <- factor(time_dat$treatment, 
+                             levels = c("low", "high")) # re-order factor levels
+
+time_mod <- glmmTMB(total_offspring ~ treatment*days_since_mating_opp + (1|replicate/rep_ID), 
+                    data = time_dat)
+
+Anova(time_mod)
+
+test(emtrends(time_mod, pairwise ~ treatment, var = "days_since_mating_opp")) # get simple effects
+
+# Figure showing sperm/seminal fluid depletion
+time_dat$days_since_mating_opp <- as.factor(time_dat$days_since_mating_opp)
+
+ggplot(data = time_dat, aes(x = days_since_mating_opp, y = daily_offspring, fill = treatment)) + geom_boxplot() + 
+       scale_fill_manual(values=c("#caf0f8", "#01497c")) + 
+       My_Theme + ylab("Daily offspring produced per female") + xlab("Days since last mating opportunity") +
+       facet_grid(~ replicate)
 
 ########################## COURTSHIP REPLICATE 1 ############################
 courtship_1_data <- read.csv("data/r1_courtship.csv") %>% 
